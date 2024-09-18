@@ -1,10 +1,11 @@
-import { Button } from "./components/ui/button";
+import Input from "./components/input";
+import Sidebar from "./components/sidebar";
 
 export default function App() {
   return (
-    <div>
-      <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      <Button>Press me</Button>
+    <div className="w-full h-lvh flex">
+      <Sidebar />
+      <Input />
     </div>
   );
 }
