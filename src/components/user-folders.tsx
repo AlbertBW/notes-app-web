@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import MenuIcon from "./icons/menu-icon";
 import FolderIcon from "./icons/folder-icon";
 import NoteIcon from "./icons/note-icon";
 import { Folder } from "./sidebar";
+import FolderDropdown from "./folder-dropdown";
+import NoteDropdown from "./note-dropdown";
 
 export default function UserFolders({
   folders,
@@ -29,29 +30,30 @@ export default function UserFolders({
         const isExpanded = expandedFolders[folder.id] || false;
         return (
           <>
-            <div className="w-full flex flex-row px-2">
+            <div className="w-full flex flex-row px-2 group">
               <Button
                 draggable
                 onClick={() => toggleFolder(folder.id)}
                 className="bg-black gap-2 w-full"
               >
                 {subfolder && (
-                  <div className="border-zinc-600 border-l h-full" />
+                  <div className="border-zinc-600 border-l h-full ml-2" />
                 )}
                 <FolderIcon /> <p>{folder.name}</p>
               </Button>
 
               <Button className="bg-black px-2">
-                <MenuIcon />
+                <FolderDropdown />
               </Button>
             </div>
 
-            {isExpanded &&
-              folder.notes &&
-              folder.notes.length > 0 &&
+            {isExpanded && folder.notes && folder.notes.length > 0 ? (
               folder.notes.map((note) => {
                 return (
-                  <div key={note.id} className="w-full flex flex-row px-2">
+                  <div
+                    key={note.id}
+                    className="w-full flex flex-row px-2 group"
+                  >
                     {subfolder && (
                       <div className="border-zinc-600 border-l ml-8" />
                     )}
@@ -65,11 +67,14 @@ export default function UserFolders({
                     </Button>
 
                     <Button className="bg-black px-2">
-                      <MenuIcon />
+                      <NoteDropdown />
                     </Button>
                   </div>
                 );
-              })}
+              })
+            ) : (
+              <div className="h-0" />
+            )}
 
             {isExpanded &&
               folder.subfolders &&

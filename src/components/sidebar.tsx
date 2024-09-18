@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import UserFolders from "./user-folders";
+import NewDropdown from "./new-dropdown";
 
 export type Folder = {
   id: number;
@@ -114,7 +115,10 @@ export default function Sidebar() {
           style={{ width: sidebarWidth }}
           className="text-white flex-shrink-0 relative"
         >
-          <div className="p-4">Your Notes</div>
+          <div className="p-4 flex justify-between">
+            <p>Your Notes</p>
+            <NewDropdown />
+          </div>
           {/* Resize handle */}
           <div
             className="absolute top-0 right-0 border-r w-2 hover:bg-zinc-800 transition-colors border-zinc-600 h-full cursor-col-resize"
