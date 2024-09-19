@@ -7,9 +7,9 @@ export default function DropdownIcon({ isOpen }: { isOpen: boolean }) {
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className={`size-6 ${isOpen && "-translate-y-1"} transition absolute ${
-          !isOpen && "hidden"
-        } group-hover:block `}
+        className={`size-6 ${
+          isOpen && "-translate-y-1"
+        } transition-all absolute ${!isOpen && "hidden"} group-hover:block `}
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" />
       </svg>
@@ -19,7 +19,7 @@ export default function DropdownIcon({ isOpen }: { isOpen: boolean }) {
         viewBox="0 0 24 24"
         strokeWidth={1.5}
         stroke="currentColor"
-        className={`size-6 ${isOpen && "translate-y-1"} transition ${
+        className={`size-6 ${isOpen && "translate-y-1"} transition-all ${
           !isOpen && "hidden"
         } group-hover:block`}
       >

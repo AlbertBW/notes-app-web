@@ -1,92 +1,62 @@
 import React, { useState } from "react";
 import UserFolders from "./user-folders";
-import NewDropdown from "./new-dropdown";
+import { Folder, Note } from "@/store/repoStore";
+import Dropdown from "./dropdown";
 
-export type Folder = {
-  id: number;
-  name: string;
-  notes: Note[];
-  subfolders: Folder[];
+export type NewNoteState = {
+  newNote: boolean;
+  folderId: number | null;
 };
 
-export type Note = {
-  id: number;
-  name: string;
-  content: string;
+export type NewFolderState = {
+  newFolder: boolean;
+  leadingFolderId: number | null;
 };
 
-const notes: Note[] = [
-  {
-    id: 1,
-    name: "Note 1",
-    content: "Content 1",
-  },
-  {
-    id: 2,
-    name: "Note 2",
-    content: "Content 2",
-  },
-  {
-    id: 3,
-    name: "Note 3",
-    content: "Content 3",
-  },
-  {
-    id: 4,
-    name: "Note 4",
-    content: "Content 4",
-  },
-  {
-    id: 5,
-    name: "Note 5",
-    content: "Content 5",
-  },
-  {
-    id: 6,
-    name: "Note 6",
-    content: "Content 6",
-  },
-];
+type SidebarProps = {
+  repository: {
+    folders: Folder[];
+    notes: Note[];
+  };
+  addFolder: (folderId: number | null, folderName: string) => void;
+  removeFolder: (folderId: number) => void;
+  renameFolder: (folderId: number, newName: string) => void;
+  addNote: (folderId: number | null, noteName: string) => void;
+  removeNote: (folderId: number | null, noteId: number) => void;
+  renameNote: (
+    folderId: number | null,
+    noteId: number,
+    newName: string
+  ) => void;
+};
 
-const subfolders: Folder[] = [
-  {
-    id: 4,
-    name: "Subfolder 1",
-    notes: [notes[5]],
-    subfolders: [],
-  },
-  {
-    id: 5,
-    name: "Subfolder 2",
-    notes: [notes[4]],
-    subfolders: [],
-  },
-];
-
-const folders: Folder[] = [
-  {
-    id: 1,
-    name: "Folder 1",
-    notes: [notes[0], notes[1]],
-    subfolders: [],
-  },
-  {
-    id: 2,
-    name: "Folder 2",
-    notes: [notes[2], notes[3], notes[4], notes[5]],
-    subfolders: [],
-  },
-  {
-    id: 3,
-    name: "Folder 3",
-    notes: [notes[0], notes[1], notes[2], notes[3], notes[4], notes[5]],
-    subfolders: [subfolders[0], subfolders[1]],
-  },
-];
-
-export default function Sidebar() {
+export default function Sidebar({
+  repository,
+  addFolder,
+  removeFolder,
+  addNote,
+  removeNote,
+  renameNote,
+  renameFolder,
+}: SidebarProps) {
   const [sidebarWidth, setSidebarWidth] = useState<number>(250);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [newNote, setNewNote] = useState<NewNoteState>({
+    newNote: false,
+    folderId: null,
+  });
+  const [newFolder, setNewFolder] = useState<NewFolderState>({
+    newFolder: false,
+    leadingFolderId: null,
+  });
+  const [renameNoteIdState, setRenameNoteIdState] = useState<number | null>(
+    null
+  );
+  const [renameFolderIdState, setRenameFolderIdState] = useState<number | null>(
+    null
+  );
+  const [newNoteName, setNewNoteName] = useState("");
+  const [newFolderName, setNewFolderName] = useState("");
 
   // Handle sidebar resize
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
@@ -107,6 +77,46 @@ export default function Sidebar() {
     document.removeEventListener("mouseup", handleMouseUp);
   }
 
+  function handleNewNoteState(folderId: number | null) {
+    setNewNote({ newNote: !newNote.newNote, folderId });
+  }
+
+  function handleNewFolderState(leadingFolderId: number | null) {
+    setNewFolder({ newFolder: !newFolder.newFolder, leadingFolderId });
+  }
+
+  function addNewNote() {
+    addNote(newNote.folderId, newNoteName);
+  }
+
+  function handleRemoveNote({
+    folderId,
+    noteId,
+  }: {
+    folderId: number | null;
+    noteId: number;
+  }) {
+    removeNote(folderId, noteId);
+  }
+
+  function handleRenameNote(folderId: number | null) {
+    if (renameNoteIdState === null) return;
+    renameNote(folderId, renameNoteIdState, newNoteName);
+  }
+
+  function addNewFolder() {
+    addFolder(newFolder.leadingFolderId, newFolderName);
+  }
+
+  function handleRemoveFolder(folderId: number) {
+    removeFolder(folderId);
+  }
+
+  function handleRenameFolder() {
+    if (renameFolderIdState === null) return;
+    renameFolder(renameFolderIdState, newFolderName);
+  }
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -115,16 +125,48 @@ export default function Sidebar() {
           style={{ width: sidebarWidth }}
           className="text-white flex-shrink-0 relative"
         >
-          <div className="p-4 flex justify-between">
+          <div className="p-4 flex justify-between select-none">
             <p>Your Notes</p>
-            <NewDropdown />
+            <Dropdown
+              handleNewNoteState={handleNewNoteState}
+              folderId={null}
+              handleRemoveNote={handleRemoveNote}
+              noteId={-1}
+              variant="new"
+              handleNewFolderState={handleNewFolderState}
+              handleRemoveFolder={handleRemoveFolder}
+              setRenameNoteIdState={setRenameNoteIdState}
+              setRenameFolderIdState={setRenameFolderIdState}
+            />
           </div>
           {/* Resize handle */}
           <div
-            className="absolute top-0 right-0 border-r w-2 hover:bg-zinc-800 transition-colors border-zinc-600 h-full cursor-col-resize"
+            className="absolute top-0 right-0 border-r w-2 z-10 hover:bg-zinc-800 transition-colors border-zinc-600 h-full cursor-col-resize"
             onMouseDown={handleMouseDown}
           />
-          <UserFolders folders={folders} />
+          <UserFolders
+            folders={repository.folders}
+            subfolder={false}
+            handleNewNoteState={handleNewNoteState}
+            handleNewFolderState={handleNewFolderState}
+            newNote={newNote}
+            setNewNote={setNewNote}
+            newFolder={newFolder}
+            setNewFolder={setNewFolder}
+            notes={repository.notes}
+            setNewNoteName={setNewNoteName}
+            addNewNote={addNewNote}
+            handleRemoveNote={handleRemoveNote}
+            setNewFolderName={setNewFolderName}
+            addNewFolder={addNewFolder}
+            handleRemoveFolder={handleRemoveFolder}
+            renameNoteIdState={renameNoteIdState}
+            setRenameNoteIdState={setRenameNoteIdState}
+            handleRenameNote={handleRenameNote}
+            setRenameFolderIdState={setRenameFolderIdState}
+            renameFolderIdState={renameFolderIdState}
+            handleRenameFolder={handleRenameFolder}
+          />
         </div>
       )}
 
