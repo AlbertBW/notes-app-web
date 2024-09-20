@@ -89,6 +89,3 @@ body {
   background-color: #27272a; /* Slightly lighter gray on hover */
 }
 
-.codemirror:hover::-webkit-scrollbar-thumb {
-  background-color: #27272a; /* Dark gray for the thumb (default-like) */
-}

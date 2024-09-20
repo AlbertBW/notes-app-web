@@ -223,7 +223,7 @@ export default function Sidebar({
           </div>
           {/* Resize handle */}
           <div
-            className="absolute top-0 right-0 border-r w-2 z-10 hover:bg-zinc-800 active:bg-zinc-800 transition-all border-zinc-600 h-full cursor-col-resize"
+            className="absolute top-0 right-0 border-r w-2 z-10 hover:bg-zinc-800 active:bg-zinc-800 transition-colors border-zinc-600 h-full cursor-col-resize"
             onMouseDown={handleMouseDown}
           />
 
@@ -249,7 +249,6 @@ export default function Sidebar({
               </div>
             </div>
           )}
-
           {newFolder.newFolder && newFolder.leadingFolderId === null && (
             <div ref={inputRef}>
               <div className="bg-black w-full px-2">
@@ -261,6 +260,7 @@ export default function Sidebar({
               </div>
             </div>
           )}
+
           <UserFolders
             folders={repository.folders}
             handleNewNoteState={handleNewNoteState}
