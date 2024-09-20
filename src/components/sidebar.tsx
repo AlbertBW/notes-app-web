@@ -32,6 +32,8 @@ type SidebarProps = {
     noteId: number,
     newName: string
   ) => void;
+  setSelectedNote: (noteId: number | null) => void;
+  selectedNote: number | null;
 };
 
 export default function Sidebar({
@@ -42,6 +44,8 @@ export default function Sidebar({
   removeNote,
   renameNote,
   renameFolder,
+  setSelectedNote,
+  selectedNote,
 }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<{
     [key: number]: boolean;
@@ -282,11 +286,19 @@ export default function Sidebar({
             toggleFolder={toggleFolder}
             openFolder={openFolder}
             inputRef={inputRef}
+            setSelectedNote={setSelectedNote}
+            selectedNote={selectedNote}
           />
           {repository.notes.length > 0 &&
             repository.notes.map((note) => (
               <div key={note.id} className="w-full flex flex-row group px-2">
-                <Button draggable className="bg-black gap-2 w-full">
+                <Button
+                  onClick={() => setSelectedNote(note.id)}
+                  draggable
+                  className={`bg-black gap-2 w-full ${
+                    selectedNote === note.id && "bg-primary"
+                  }`}
+                >
                   <NoteIcon />{" "}
                   {renameNoteIdState === note.id ? (
                     <div ref={inputRef}>

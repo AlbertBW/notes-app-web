@@ -1,17 +1,21 @@
+import { useState } from "react";
 import Input from "./components/input";
 import Sidebar from "./components/sidebar";
-import useRepoStore from "./store/repoStore";
+import useRepoStore, { Folder, Note } from "./store/repoStore";
 
 export default function App() {
   const {
     repository,
     addFolder,
     removeFolder,
+    renameFolder,
     addNote,
     removeNote,
     renameNote,
-    renameFolder,
+    writeNote,
   } = useRepoStore();
+
+  const [selectedNote, setSelectedNote] = useState<number | null>(null);
 
   // useEffect(() => {
   //   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -25,7 +29,32 @@ export default function App() {
   //   };
   // }, []);
 
-  console.log(repository);
+  function findNote() {
+    if (!selectedNote) return null;
+    let note = repository.notes.find((note) => note.id === selectedNote);
+
+    const findNoteRecursively = (
+      folders: Folder[],
+      noteId: number
+    ): Note | undefined => {
+      return folders.reduce<Note | undefined>((foundNote, folder) => {
+        if (foundNote) return foundNote;
+
+        const note = folder.notes.find((note) => note.id === noteId);
+        if (note) return note;
+
+        return findNoteRecursively(folder.subfolders ?? [], noteId);
+      }, undefined);
+    };
+
+    if (!note) {
+      note = findNoteRecursively(repository.folders, selectedNote);
+    }
+
+    return note || null;
+  }
+
+  const note = findNote();
 
   return (
     <div className="w-full h-lvh flex">
@@ -37,8 +66,10 @@ export default function App() {
         renameNote={renameNote}
         renameFolder={renameFolder}
         repository={repository}
+        setSelectedNote={setSelectedNote}
+        selectedNote={selectedNote}
       />
-      <Input />
+      <Input note={note} writeNote={writeNote} />
     </div>
   );
 }

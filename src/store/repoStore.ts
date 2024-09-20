@@ -34,6 +34,7 @@ export interface RepoState {
     noteId: number,
     newName: string
   ) => void;
+  writeNote: (noteId: number, content: string) => void;
 }
 
 const useRepoStore = create<RepoState>((set) => ({
@@ -330,6 +331,68 @@ const useRepoStore = create<RepoState>((set) => ({
             folderId,
             noteId,
             newName
+          ),
+        },
+      };
+    }),
+
+  writeNote: (noteId, content) =>
+    set((state) => {
+      const writeNoteRecursively = (
+        folders: Folder[],
+        noteId: number,
+        content: string
+      ): Folder[] => {
+        console.log(content);
+        return folders.map((folder) => {
+          return {
+            ...folder,
+            notes: folder.notes.map((note) => {
+              if (note.id === noteId) {
+                return {
+                  ...note,
+                  content: content,
+                };
+              }
+              return note;
+            }),
+            subfolders: writeNoteRecursively(
+              folder.subfolders,
+              noteId,
+              content
+            ),
+          };
+        });
+      };
+
+      // If the note was found and updated at the top level, return the updated folder
+      const noteFound = state.repository.notes.find(
+        (note) => note.id === noteId
+      );
+      if (noteFound) {
+        return {
+          repository: {
+            ...state.repository,
+            notes: state.repository.notes.map((note) => {
+              if (note.id === noteId) {
+                return {
+                  ...note,
+                  content: content,
+                };
+              }
+              return note;
+            }),
+          },
+        };
+      }
+
+      return {
+        repository: {
+          ...state.repository,
+          folders: writeNoteRecursively(
+            state.repository.folders,
+            noteId,
+            content
           ),
         },
       };

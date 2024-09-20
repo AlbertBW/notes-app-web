@@ -38,6 +38,8 @@ type UserFoldersProps = {
   toggleFolder: (folderId: number) => void;
   openFolder: (folderId: number) => void;
   inputRef: React.RefObject<HTMLDivElement>;
+  setSelectedNote: (noteId: number) => void;
+  selectedNote: number | null;
 };
 
 export default function UserFolders({
@@ -66,6 +68,8 @@ export default function UserFolders({
   toggleFolder,
   inputRef,
   openFolder,
+  setSelectedNote,
+  selectedNote,
 }: UserFoldersProps) {
   return (
     <div className="flex flex-col">
@@ -141,6 +145,8 @@ export default function UserFolders({
                     toggleFolder={toggleFolder}
                     inputRef={inputRef}
                     openFolder={openFolder}
+                    setSelectedNote={setSelectedNote}
+                    selectedNote={selectedNote}
                   />
                 </div>
               )}
@@ -182,7 +188,13 @@ export default function UserFolders({
                 return (
                   <div key={note.id} className="w-full flex flex-row group">
                     <div className={`border-l border-zinc-600 ml-6`} />
-                    <Button draggable className="bg-black gap-2 w-full">
+                    <Button
+                      draggable
+                      onClick={() => setSelectedNote(note.id)}
+                      className={`bg-black gap-2 w-full ${
+                        selectedNote === note.id && "bg-primary"
+                      }`}
+                    >
                       <NoteIcon />{" "}
                       {renameNoteIdState === note.id ? (
                         <div ref={inputRef}>
