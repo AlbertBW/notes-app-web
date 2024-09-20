@@ -7,10 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Dot } from "lucide-react";
 import { githubDark } from "@uiw/codemirror-theme-github";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import {
-  dark,
-  coldarkDark,
-} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function Input({
   note,
@@ -133,18 +130,20 @@ export default function Input({
           </div>
 
           <div className="w-full overflow-auto p-2">
-            {/* <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              className="overflow-x-auto border-2 rounded-md p-4 border-zinc-800 h-full prose w-full bg-black"
-            >
-              {note.content}
-            </ReactMarkdown> */}
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              // rehypePlugins={[rehypeRaw]}
               className="overflow-x-auto border-2 rounded-md p-4 border-zinc-800 h-full prose w-full bg-black"
               components={{
-                code({ inline, className, children, ...props }: any) {
+                code({
+                  inline,
+                  className,
+                  children,
+                  ...props
+                }: {
+                  inline?: boolean;
+                  className?: string;
+                  children?: React.ReactNode;
+                }) {
                   const match = /language-(\w+)/.exec(className || "");
 
                   return !inline && match ? (
