@@ -129,6 +129,7 @@ export default function Sidebar({
     notesFolderId?: number
   ) {
     if (e.key === "Enter") {
+      // Create New Note
       if (newNote.newNote) {
         addNewNote();
         handleNewNoteState(null);
@@ -137,11 +138,18 @@ export default function Sidebar({
         }
         return;
       }
+
+      // Create New Folder
       if (newFolder.newFolder) {
         addNewFolder();
         handleNewFolderState(null);
+        if (newFolder.leadingFolderId !== null) {
+          return openFolder(newFolder.leadingFolderId);
+        }
         return;
       }
+
+      // Rename Note
       if (renameNoteIdState !== null) {
         if (notesFolderId) {
           handleRenameNote(notesFolderId);
@@ -151,6 +159,8 @@ export default function Sidebar({
         setRenameNoteIdState(null);
         return;
       }
+
+      // Rename Folder
       if (renameFolderIdState !== null) {
         handleRenameFolder();
         setRenameFolderIdState(null);
@@ -200,14 +210,14 @@ export default function Sidebar({
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-[calc(100vh-65px)]">
       {/* Sidebar */}
       {isSidebarOpen && (
         <div
           style={{ width: sidebarWidth }}
           className="text-white flex-shrink-0 relative"
         >
-          <div className="p-4 flex justify-between select-none">
+          <div className="p-4 flex justify-between items-center select-none">
             <p>Your Notes</p>
             <Dropdown
               handleNewNoteState={handleNewNoteState}
@@ -270,7 +280,6 @@ export default function Sidebar({
             newFolder={newFolder}
             setNewFolder={setNewFolder}
             setNewNoteName={setNewNoteName}
-            addNewNote={addNewNote}
             handleRemoveNote={handleRemoveNote}
             setNewFolderName={setNewFolderName}
             addNewFolder={addNewFolder}

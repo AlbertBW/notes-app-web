@@ -22,6 +22,8 @@ export interface RepoState {
   };
   folderId: number;
   noteId: number;
+  clearRepo: () => void;
+  importRepo: (repo: { folders: Folder[]; notes: Note[] }) => void;
   incrementFolderId: () => number;
   incrementNoteId: () => number;
   addFolder: (folderId: number | null, folderName: string) => void;
@@ -55,6 +57,21 @@ const useRepoStore = create<RepoState>((set) => ({
       };
     });
     return updatedFolderId;
+  },
+
+  clearRepo: () => {
+    set({
+      repository: {
+        folders: [],
+        notes: [],
+      },
+    });
+  },
+
+  importRepo: (repo) => {
+    set({
+      repository: repo,
+    });
   },
 
   incrementNoteId: () => {
@@ -343,7 +360,6 @@ const useRepoStore = create<RepoState>((set) => ({
         noteId: number,
         content: string
       ): Folder[] => {
-        console.log(content);
         return folders.map((folder) => {
           return {
             ...folder,

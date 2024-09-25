@@ -64,9 +64,13 @@ export default function Dropdown({
       )}
 
       {variant === "new" && (
-        <button onClick={toggleDropdown}>
+        <Button
+          size={"icon"}
+          className="bg-black flex justify-center items-center"
+          onClick={toggleDropdown}
+        >
           <Plus />
-        </button>
+        </Button>
       )}
 
       <div

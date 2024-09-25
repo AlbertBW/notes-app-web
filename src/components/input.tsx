@@ -94,11 +94,11 @@ export default function Input({
   return (
     <div
       ref={containerRef}
-      className="w-full bg-black z-50 overflow-y-scroll transition-colors"
+      className="w-full bg-black z-30 overflow-y-scroll transition-colors"
     >
       {note && (
-        <div className="w-full h-full flex">
-          <div className="flex h-full">
+        <div className="w-full h-[calc(100vh-65px)] flex">
+          <div className="flex h-[calc(100vh-65px)]">
             <div
               className="relative flex-shrink-0"
               style={{ width: codemirrorWidth }}
@@ -123,7 +123,7 @@ export default function Input({
 
           {/* Resizer */}
           <div
-            className="group w-2 z-40 bg-zinc-800 hover:bg-zinc-700 active:bg-zinc-700 transition-colors border-zinc-600 h-[calc(100%-20px)] my-auto cursor-col-resize justify-center flex items-center rounded"
+            className="group w-2 z-40 bg-zinc-900 hover:bg-zinc-800 active:bg-zinc-800 transition-colors h-[calc(100%-20px)] my-auto cursor-col-resize justify-center flex items-center rounded"
             onMouseDown={handleMouseDown}
           >
             <Dot size={48} color="#52525b" />
@@ -132,7 +132,7 @@ export default function Input({
           <div className="w-full overflow-auto p-2">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              className="overflow-x-auto border-2 rounded-md p-4 border-zinc-800 h-full prose w-full bg-black"
+              className="overflow-y-scroll border-2 rounded-md p-4 border-zinc-800 h-full prose w-full bg-black mx-auto"
               components={{
                 code({
                   inline,
@@ -170,7 +170,7 @@ export default function Input({
       )}
 
       {!note && (
-        <div className="text-zinc-400 justify-center flex items-center h-screen">
+        <div className="text-zinc-400 justify-center flex items-center h-[calc(100vh-65px)]">
           Select a note
         </div>
       )}

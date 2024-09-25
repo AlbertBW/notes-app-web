@@ -14,7 +14,6 @@ type UserFoldersProps = {
   setNewFolderName: (name: string) => void;
   handleNewNoteState: (folderId: number | null) => void;
   handleNewFolderState: (folderId: number | null) => void;
-  addNewNote: () => void;
   handleRemoveNote: (params: {
     folderId: number | null;
     noteId: number;
@@ -50,7 +49,6 @@ export default function UserFolders({
   setNewFolderName,
   handleNewNoteState,
   handleNewFolderState,
-  addNewNote,
   handleRemoveNote,
   setNewNote,
   newFolder,
@@ -129,7 +127,6 @@ export default function UserFolders({
                     newFolder={newFolder}
                     setNewFolder={setNewFolder}
                     setNewNoteName={setNewNoteName}
-                    addNewNote={addNewNote}
                     handleRemoveNote={handleRemoveNote}
                     setNewFolderName={setNewFolderName}
                     addNewFolder={addNewFolder}

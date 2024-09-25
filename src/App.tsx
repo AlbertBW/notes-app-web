@@ -2,6 +2,7 @@ import { useState } from "react";
 import Input from "./components/input";
 import Sidebar from "./components/sidebar";
 import useRepoStore, { Folder, Note } from "./store/repoStore";
+import Header from "./components/header";
 
 export default function App() {
   const {
@@ -57,19 +58,22 @@ export default function App() {
   const note = findNote();
 
   return (
-    <div className="w-full h-lvh flex">
-      <Sidebar
-        addFolder={addFolder}
-        addNote={addNote}
-        removeFolder={removeFolder}
-        removeNote={removeNote}
-        renameNote={renameNote}
-        renameFolder={renameFolder}
-        repository={repository}
-        setSelectedNote={setSelectedNote}
-        selectedNote={selectedNote}
-      />
-      <Input note={note} writeNote={writeNote} />
+    <div>
+      <Header />
+      <div className="w-full h-[calc(100vh-65px)] flex">
+        <Sidebar
+          addFolder={addFolder}
+          addNote={addNote}
+          removeFolder={removeFolder}
+          removeNote={removeNote}
+          renameNote={renameNote}
+          renameFolder={renameFolder}
+          repository={repository}
+          setSelectedNote={setSelectedNote}
+          selectedNote={selectedNote}
+        />
+        <Input note={note} writeNote={writeNote} />
+      </div>
     </div>
   );
 }
