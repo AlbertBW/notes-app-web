@@ -1,13 +1,16 @@
-import useRepoStore, { Folder, Note } from "@/store/repoStore";
+import useRepoStore from "@/store/repoStore";
 import { Button } from "./ui/button";
 import { useRef, useState } from "react";
 import { Input } from "./ui/input";
 
 export default function Header() {
   const { repository, importRepo, clearRepo } = useRepoStore();
-  const [openModal, setOpenModal] = useState(false);
+  const [exportModal, setExportModal] = useState(false);
+  const [newModal, setNewModal] = useState(false);
+  const [importModal, setImportModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileName, setFileName] = useState("");
 
   const emptyRepo =
     repository.folders.length === 0 && repository.notes.length === 0;
@@ -29,16 +32,30 @@ export default function Header() {
     }
   };
 
-  const handleButtonClick = () => {
+  const handleImportNotes = () => {
     fileInputRef.current?.click();
   };
 
-  function handleOpenModal() {
-    setOpenModal(true);
+  function closeExportModal() {
+    setExportModal(false);
   }
 
-  function closeModal() {
-    setOpenModal(false);
+  const handleExport = () => {
+    const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(repository)
+    )}`;
+    const downloadAnchorNode = document.createElement("a");
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `${fileName}.notes`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    closeExportModal();
+  };
+
+  function handleClearRepo() {
+    clearRepo();
+    setNewModal(false);
   }
 
   return (
@@ -55,13 +72,17 @@ export default function Header() {
         </div>
 
         <div className="space-x-4 flex">
-          <Button onClick={clearRepo} variant={"secondary"}>
+          <Button
+            onClick={() => setNewModal(true)}
+            variant={"secondary"}
+            disabled={emptyRepo}
+          >
             New
           </Button>
           <div className="border-r " />
           {error && <p className="text-red-500">{error}</p>}
           <Button
-            onClick={handleOpenModal}
+            onClick={() => setExportModal(true)}
             variant={"secondary"}
             disabled={emptyRepo}
           >
@@ -73,19 +94,49 @@ export default function Header() {
             accept=".notes"
             ref={fileInputRef}
             style={{ display: "none" }}
-            onChange={handleFileChange}
+            onChange={(e) => {
+              handleFileChange(e);
+              setImportModal(false);
+            }}
           />
-          <Button variant="secondary" onClick={handleButtonClick}>
+          <Button variant="secondary" onClick={() => setImportModal(true)}>
             Import
           </Button>
         </div>
       </div>
-      {openModal && (
+      {newModal && (
+        <Modal
+          heading="Create a new notes repository"
+          subheading="Are you sure?"
+          warning="This will delete your notes permanently. Export them first!"
+          destructionButtonText="Confirm"
+          standardButtonText="Cancel"
+          onDestruction={handleClearRepo}
+          onConfirmation={() => setNewModal(false)}
+        />
+      )}
+      {exportModal && (
         <Modal
           heading="Export your notes"
           subheading="Name your file and download it"
-          closeModal={closeModal}
-          repository={repository}
+          destructionButtonText="Cancel"
+          standardButtonText="Export"
+          onDestruction={closeExportModal}
+          onConfirmation={handleExport}
+          disabled={fileName === ""}
+          input={setFileName}
+          inputPlaceholder="File Name"
+        />
+      )}
+      {importModal && (
+        <Modal
+          heading="Import your notes"
+          subheading="Select a .notes file to import"
+          warning="This will overwrite your current notes"
+          destructionButtonText="Cancel"
+          standardButtonText="Select a file"
+          onDestruction={() => setImportModal(false)}
+          onConfirmation={handleImportNotes}
         />
       )}
     </>
@@ -95,55 +146,52 @@ export default function Header() {
 export function Modal({
   heading,
   subheading,
+  warning,
   children,
-  closeModal,
-  repository,
+  destructionButtonText,
+  standardButtonText,
+  onDestruction,
+  onConfirmation,
+  input,
+  inputPlaceholder,
+  disabled,
 }: {
   heading: string;
   subheading: string;
+  warning?: string;
   children?: React.ReactNode;
-  closeModal: () => void;
-  repository: {
-    folders: Folder[];
-    notes: Note[];
-  };
+  destructionButtonText?: string;
+  standardButtonText?: string;
+  onDestruction?: () => void;
+  onConfirmation?: () => void;
+  input?: (value: string) => void;
+  inputPlaceholder?: string;
+  disabled?: boolean;
 }) {
-  const [fileName, setFileName] = useState("");
-
-  const handleExport = () => {
-    const dataStr = `data:text/json;charset=utf-8,${encodeURIComponent(
-      JSON.stringify(repository)
-    )}`;
-    const downloadAnchorNode = document.createElement("a");
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `${fileName}.notes`);
-    document.body.appendChild(downloadAnchorNode);
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-    closeModal();
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-zinc-900 p-4 gap-2 rounded-lg max-w-md w-full justify-center items-center flex flex-col border-2 border-zinc-500">
         <h1 className="font-bold">{heading}</h1>
-        <h1 className="text-zinc-400">{subheading}</h1>
+        <h2 className="text-zinc-400">{subheading}</h2>
+        {warning && <p className="text-red-500 text-center">{warning}</p>}
         <div>{children}</div>
-        <Input
-          placeholder="Your notes"
-          onChange={(e) => setFileName(e.target.value)}
-          className="w-1/2"
-        />
+        {input && (
+          <Input
+            placeholder={inputPlaceholder || ""}
+            onChange={(e) => input(e.target.value)}
+            className="w-1/2"
+          />
+        )}
         <div className="flex justify-center items-center gap-4 mt-2">
-          <Button onClick={closeModal} variant={"destructive"}>
-            Close
+          <Button onClick={onDestruction} variant={"destructive"}>
+            {destructionButtonText || "Cancel"}
           </Button>
           <Button
-            disabled={fileName === ""}
+            disabled={disabled}
             variant={"secondary"}
-            onClick={handleExport}
+            onClick={onConfirmation}
           >
-            Export
+            {standardButtonText || "Confirm"}
           </Button>
         </div>
       </div>

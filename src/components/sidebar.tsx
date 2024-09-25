@@ -209,6 +209,59 @@ export default function Sidebar({
     renameFolder(renameFolderIdState, newFolderName);
   }
 
+  // Called when the drag operation starts
+  const handleDragStart = (
+    e: React.DragEvent<HTMLButtonElement>,
+    noteId: number
+  ) => {
+    e.dataTransfer.setData("text/plain", noteId.toString()); // Set the dragged note's ID
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  // Called when the dragged element is over a valid drop target
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Required to allow drop
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  // Called when the dragged element is dropped onto a target
+  const handleDrop = (e: React.DragEvent, targetNoteId: number) => {
+    const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
+
+    // Handle the logic to move or reorder the notes
+    if (draggedNoteId !== targetNoteId) {
+      // For example, you could update the state to reorder the notes
+      console.log(`Dropped note ${draggedNoteId} onto note ${targetNoteId}`);
+      // Add your custom logic here to rearrange or move notes
+    }
+  };
+
+  // Called when the drag operation starts
+  const handleFolderDragStart = (
+    e: React.DragEvent<HTMLButtonElement>,
+    folderId: number
+  ) => {
+    e.dataTransfer.setData("text/plain", folderId.toString()); // Set the dragged note's ID
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  // Called when the dragged element is over a valid drop target
+  const handleFolderDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); // Required to allow drop
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  // Called when the dragged element is dropped onto a target
+  const handleFolderDrop = (e: React.DragEvent, targetId: number) => {
+    const draggedFolderId = parseInt(e.dataTransfer.getData("text/plain"), 10);
+
+    // Handle the logic to move or reorder the notes
+    if (draggedFolderId !== targetId) {
+      // For example, you could update the state to reorder the notes
+      console.log(`Dropped folder ${draggedFolderId} onto note ${targetId}`);
+      // Add your custom logic here to rearrange or move notes
+    }
+  };
   return (
     <div className="flex h-[calc(100vh-65px)]">
       {/* Sidebar */}
@@ -297,6 +350,9 @@ export default function Sidebar({
             inputRef={inputRef}
             setSelectedNote={setSelectedNote}
             selectedNote={selectedNote}
+            handleFolderDragStart={handleFolderDragStart}
+            handleFolderDragOver={handleFolderDragOver}
+            handleFolderDrop={handleFolderDrop}
           />
           {repository.notes.length > 0 &&
             repository.notes.map((note) => (
@@ -304,6 +360,9 @@ export default function Sidebar({
                 <Button
                   onClick={() => setSelectedNote(note.id)}
                   draggable
+                  onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
+                  onDragOver={handleDragOver} // Required to allow a drop
+                  onDrop={(e) => handleDrop(e, note.id)} // Drop a note into a new folder or position
                   className={`bg-black gap-2 w-full ${
                     selectedNote === note.id && "bg-primary"
                   }`}

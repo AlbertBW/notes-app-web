@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Input from "./components/input";
 import Sidebar from "./components/sidebar";
 import useRepoStore, { Folder, Note } from "./store/repoStore";
 import Header from "./components/header";
+import { addStartingNotes } from "./lib/welcomeNotesUtils";
 
 export default function App() {
   const {
@@ -18,17 +19,29 @@ export default function App() {
 
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
 
-  // useEffect(() => {
-  //   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-  //     event.preventDefault();
-  //   };
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
 
-  //   window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
 
-  //   return () => {
-  //     window.removeEventListener("beforeunload", handleBeforeUnload);
-  //   };
-  // }, []);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
+  // Set welcome notes on first load
+  useEffect(() => {
+    const isFirstLoad = sessionStorage.getItem("isFirstLoad");
+    if (!isFirstLoad) {
+      if (repository.folders.length === 0) {
+        addStartingNotes({ addNote, writeNote });
+        setSelectedNote(1);
+      }
+      sessionStorage.setItem("isFirstLoad", "true");
+    }
+  }, [repository.folders, addNote, writeNote]);
 
   function findNote() {
     if (!selectedNote) return null;

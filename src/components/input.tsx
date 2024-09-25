@@ -132,7 +132,7 @@ export default function Input({
           <div className="w-full overflow-auto p-2">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              className="overflow-y-scroll border-2 rounded-md p-4 border-zinc-800 h-full prose w-full bg-black mx-auto"
+              className="overflow-y-scroll border-2 rounded-md p-4 border-zinc-800 h-full prose prose-invert w-full bg-black mx-auto"
               components={{
                 code({
                   inline,

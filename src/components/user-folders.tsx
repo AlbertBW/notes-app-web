@@ -39,6 +39,15 @@ type UserFoldersProps = {
   inputRef: React.RefObject<HTMLDivElement>;
   setSelectedNote: (noteId: number) => void;
   selectedNote: number | null;
+  handleFolderDragStart: (
+    e: React.DragEvent<HTMLButtonElement>,
+    folderId: number
+  ) => void;
+  handleFolderDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
+  handleFolderDrop: (
+    e: React.DragEvent<HTMLButtonElement>,
+    folderId: number
+  ) => void;
 };
 
 export default function UserFolders({
@@ -68,6 +77,9 @@ export default function UserFolders({
   openFolder,
   setSelectedNote,
   selectedNote,
+  handleFolderDragStart,
+  handleFolderDragOver,
+  handleFolderDrop,
 }: UserFoldersProps) {
   return (
     <div className="flex flex-col">
@@ -79,6 +91,9 @@ export default function UserFolders({
               {subfolder && <div className={``} />}
               <Button
                 draggable
+                onDragStart={(e) => handleFolderDragStart(e, folder.id)} // Start dragging a folder
+                onDragOver={handleFolderDragOver} // Required to allow a drop
+                onDrop={(e) => handleFolderDrop(e, folder.id)} // Drop a note into a new folder or position
                 onClick={() => toggleFolder(folder.id)}
                 className="bg-black gap-2 w-full"
               >
@@ -144,6 +159,9 @@ export default function UserFolders({
                     openFolder={openFolder}
                     setSelectedNote={setSelectedNote}
                     selectedNote={selectedNote}
+                    handleFolderDragStart={handleFolderDragStart}
+                    handleFolderDragOver={handleFolderDragOver}
+                    handleFolderDrop={handleFolderDrop}
                   />
                 </div>
               )}
