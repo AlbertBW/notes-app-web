@@ -13,7 +13,6 @@ export type Folder = {
   name: string;
   notes: Note[];
   subfolders: Folder[] | [];
-  parentFolderId: number | null;
 };
 
 export interface RepoState {
@@ -31,7 +30,7 @@ export interface RepoState {
   removeNote: (folderId: number, noteId: number) => void;
   renameNote: (folderId: number, noteId: number, newName: string) => void;
   writeNote: (noteId: number, content: string) => void;
-  moveNote: (noteId: number, folderId: number | null) => void;
+  moveNote: (noteId: number, folderId: number) => void;
 }
 
 const rootFolder: Folder = {
@@ -39,14 +38,13 @@ const rootFolder: Folder = {
   name: "Root",
   notes: [],
   subfolders: [],
-  parentFolderId: null,
 };
 
 const useRepoStore = create<RepoState>((set) => ({
   repository: rootFolder,
 
   // Root folder has id 0
-  folderId: 1,
+  folderId: 0,
   noteId: 0,
 
   clearRepo: () => {
@@ -90,10 +88,8 @@ const useRepoStore = create<RepoState>((set) => ({
         name: folderName,
         subfolders: [],
         notes: [],
-        parentFolderId: parentFolderId,
       };
 
-      // Recursive function to add the new folder to the correct parent folder
       const addFolderRecursively = (
         folders: Folder[],
         parentFolderId: number
@@ -383,8 +379,68 @@ const useRepoStore = create<RepoState>((set) => ({
 
   moveNote: (noteId, folderId) => {
     set((state) => {
-      console.log("Moving note", noteId, "to folder", folderId);
-      return state;
+      let noteToMove: Note | null = null;
+
+      const findNoteRecursively = (
+        folder: Folder,
+        noteId: number
+      ): Note | null => {
+        const note = folder.notes.find((n) => n.id === noteId);
+        if (note) return note;
+
+        return folder.subfolders.reduce<Note | null>((found, subfolder) => {
+          return found || findNoteRecursively(subfolder, noteId);
+        }, null);
+      };
+
+      noteToMove = findNoteRecursively(state.repository, noteId);
+
+      if (!noteToMove) return state;
+
+      const removeNoteRecursively = (
+        folder: Folder,
+        noteId: number
+      ): Folder => {
+        return {
+          ...folder,
+          notes: folder.notes.filter((note) => note.id !== noteId),
+          subfolders: folder.subfolders.map((subfolder) =>
+            removeNoteRecursively(subfolder, noteId)
+          ),
+        };
+      };
+
+      const updatedRepository = removeNoteRecursively(state.repository, noteId);
+
+      const addNoteRecursively = (
+        folder: Folder,
+        note: Note,
+        targetFolderId: number
+      ): Folder => {
+        if (folder.id === targetFolderId) {
+          return {
+            ...folder,
+            notes: [...folder.notes, note],
+          };
+        }
+
+        return {
+          ...folder,
+          subfolders: folder.subfolders.map((subfolder) =>
+            addNoteRecursively(subfolder, note, targetFolderId)
+          ),
+        };
+      };
+
+      const newRepository = addNoteRecursively(
+        updatedRepository,
+        noteToMove,
+        folderId
+      );
+
+      return {
+        repository: newRepository,
+      };
     });
   },
 }));

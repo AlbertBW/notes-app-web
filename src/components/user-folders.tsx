@@ -41,7 +41,14 @@ type UserFoldersProps = {
     noteId: number
   ) => void;
   handleDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
-  handleDrop: (e: React.DragEvent<HTMLButtonElement>, noteId: number) => void;
+  handleDrop: (
+    e: React.DragEvent<HTMLButtonElement>,
+    noteId: number,
+    isFolder: boolean
+  ) => void;
+  hoveredFolderId: number | null;
+  handleDragEnter: (folderId: number) => void;
+  handleDragLeave: () => void;
 };
 
 export default function UserFolders({
@@ -74,22 +81,29 @@ export default function UserFolders({
   handleDragStart,
   handleDragOver,
   handleDrop,
+  hoveredFolderId,
+  handleDragEnter,
+  handleDragLeave,
 }: UserFoldersProps) {
   return (
     <div className="flex flex-col">
       {folders.map((folder) => {
         const isExpanded = expandedFolders[folder.id] || false;
         return (
-          <>
-            <div key={folder.id} className="w-full flex flex-row group px-2">
+          <div key={folder.id}>
+            <div className="w-full flex flex-row group px-2">
               {subfolder && <div className={``} />}
               <Button
                 draggable
                 onClick={() => toggleFolder(folder.id)}
-                // onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
+                onDragStart={(e) => handleDragStart(e, folder.id)} // Start dragging a folder
                 onDragOver={handleDragOver} // Required to allow a drop
-                // onDrop={(e) => handleDrop(e, note.id)} // Drop a note into a new folder or position
-                className="bg-black gap-2 w-full"
+                onDrop={(e) => handleDrop(e, folder.id, true)} // Drop a note or folder into this folder
+                onDragEnter={() => handleDragEnter(folder.id)} // Highlight folder on drag enter
+                onDragLeave={handleDragLeave} // Remove highlight on drag leave
+                className={`bg-black gap-2 w-full ${
+                  hoveredFolderId === folder.id && "bg-zinc-600"
+                }`} // Apply highlight class
               >
                 <FolderIcon />{" "}
                 {renameFolderIdState && renameFolderIdState === folder.id ? (
@@ -156,6 +170,9 @@ export default function UserFolders({
                     handleDragStart={handleDragStart}
                     handleDragOver={handleDragOver}
                     handleDrop={handleDrop}
+                    hoveredFolderId={hoveredFolderId}
+                    handleDragEnter={handleDragEnter}
+                    handleDragLeave={handleDragLeave}
                   />
                 </div>
               )}
@@ -200,6 +217,9 @@ export default function UserFolders({
                     <Button
                       draggable
                       onClick={() => setSelectedNote(note.id)}
+                      onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
+                      onDragOver={handleDragOver} // Required to allow a drop
+                      onDrop={(e) => handleDrop(e, note.id, false)} // Drop a note into a new folder or position
                       className={`bg-black gap-2 w-full ${
                         selectedNote === note.id && "bg-primary"
                       }`}
@@ -237,7 +257,7 @@ export default function UserFolders({
             ) : (
               <div className="h-0" />
             )}
-          </>
+          </div>
         );
       })}
     </div>

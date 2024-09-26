@@ -27,7 +27,7 @@ type SidebarProps = {
   renameNote: (folderId: number, noteId: number, newName: string) => void;
   setSelectedNote: (noteId: number | null) => void;
   selectedNote: number | null;
-  moveNote: (noteId: number, folderId: number | null) => void;
+  moveNote: (noteId: number, folderId: number) => void;
 };
 
 export default function Sidebar({
@@ -64,6 +64,7 @@ export default function Sidebar({
   );
   const [newNoteName, setNewNoteName] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
+  const [hoveredFolderId, setHoveredFolderId] = useState<number | null>(null);
 
   // Close input when clicking outside
   useEffect(() => {
@@ -205,31 +206,78 @@ export default function Sidebar({
   ) => {
     e.dataTransfer.setData("text/plain", noteId.toString()); // Set the dragged note's ID
     e.dataTransfer.effectAllowed = "move";
+    const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    console.log(`Started dragging note ${draggedNoteId}`);
   };
 
   // Called when the dragged element is over a valid drop target
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault(); // Required to allow drop
     e.dataTransfer.dropEffect = "move";
+    const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    console.log(`Dragging note ${draggedNoteId} over folder`);
   };
 
   // Called when the dragged element is dropped onto a target
-  const handleDrop = (e: React.DragEvent, targetFolderId: number) => {
-    const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
+  const handleDrop = (
+    e: React.DragEvent,
+    targetId: number,
+    isFolder: boolean
+  ) => {
+    e.preventDefault();
+    const draggedNoteId = e.dataTransfer.getData("text/plain");
 
-    // For example, you could update the state to reorder the notes
-    console.log(`Dropped note ${draggedNoteId} onto folder ${targetFolderId}`);
-    // Add your custom logic here to rearrange or move notes
-    moveNote(draggedNoteId, targetFolderId);
+    console.log("Dropped");
+
+    console.log(`Dropped note ${draggedNoteId} into folder ${targetId}`);
+    if (isFolder) {
+      // Add logic to move the note into the folder\
+      openFolder(targetId);
+      moveNote(parseInt(draggedNoteId, 10), targetId);
+    } else {
+      // Add logic to reorder notes or handle note-to-note drop
+      // DO NOTHING FOR NOW - MAYBE ADD LATER
+    }
+    setHoveredFolderId(null);
+  };
+
+  // Timer for opening folders on hover
+  const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Called when a folder is hovered over
+  const handleDragEnter = (folderId: number) => {
+    console.log("Hovered over folder");
+    setTimeout(() => {
+      if (timeoutIdRef.current) {
+        clearTimeout(timeoutIdRef.current);
+        timeoutIdRef.current = null;
+      }
+
+      setHoveredFolderId(folderId);
+      timeoutIdRef.current = setTimeout(() => {
+        openFolder(folderId);
+      }, 500);
+    }, 0.001);
+  };
+
+  // Called when a folder is no longer hovered over
+  const handleDragLeave = () => {
+    console.log("Left folder");
+    setHoveredFolderId(null);
+    if (timeoutIdRef.current) {
+      clearTimeout(timeoutIdRef.current);
+      timeoutIdRef.current = null;
+    }
   };
 
   return (
     <div className="flex h-[calc(100vh-65px)]">
       {/* Sidebar */}
+
       {isSidebarOpen && (
         <div
           style={{ width: sidebarWidth }}
-          className="text-white flex-shrink-0 relative"
+          className="text-white flex-shrink-0 relative overflow-y-auto"
         >
           <div className="p-4 flex justify-between items-center select-none">
             <p>Your Notes</p>
@@ -315,6 +363,9 @@ export default function Sidebar({
             handleDragStart={handleDragStart}
             handleDragOver={handleDragOver}
             handleDrop={handleDrop}
+            hoveredFolderId={hoveredFolderId}
+            handleDragEnter={handleDragEnter}
+            handleDragLeave={handleDragLeave}
           />
           {repository.notes.length > 0 &&
             repository.notes.map((note) => (
@@ -324,7 +375,7 @@ export default function Sidebar({
                   draggable
                   onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
                   onDragOver={handleDragOver} // Required to allow a drop
-                  onDrop={(e) => handleDrop(e, note.id)} // Drop a note into a new folder or position
+                  onDrop={(e) => handleDrop(e, note.id, false)} // Drop a note into a new folder or position
                   className={`bg-black gap-2 w-full ${
                     selectedNote === note.id && "bg-primary"
                   }`}
@@ -357,13 +408,24 @@ export default function Sidebar({
                 )}
               </div>
             ))}
+
+          {/* For dragging to root */}
+          <button
+            className="absolute min-h-12 h-full max-h-[200px] w-full"
+            draggable
+            onDragStart={(e) => handleDragStart(e, repository.id)} // Start dragging a folder
+            onDragOver={handleDragOver} // Required to allow a drop
+            onDrop={(e) => handleDrop(e, repository.id, true)} // Drop a note or folder into this folder
+            onDragEnter={() => handleDragEnter(repository.id)} // Highlight folder on drag enter
+            onDragLeave={handleDragLeave} // Remove highlight on drag leave
+          />
         </div>
       )}
 
       {/* Toggle Button for Mobile */}
       <Button
         className="md:hidden p-2 fixed top-4 left-4"
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        onClick={() => setIsSidebarOpen((prevState) => !prevState)}
       >
         {isSidebarOpen ? <SidebarClose /> : <SidebarOpen />}
       </Button>
