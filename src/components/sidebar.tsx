@@ -1,39 +1,33 @@
 import React, { useEffect, useRef, useState } from "react";
 import UserFolders from "./user-folders";
-import { Folder, Note } from "@/store/repoStore";
+import { Folder } from "@/store/repoStore";
 import Dropdown from "./dropdown";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import NoteIcon from "./icons/note-icon";
 import { SidebarClose, SidebarOpen } from "lucide-react";
+import NoteIcon from "./icons/note-icon";
 
 export type NewNoteState = {
   newNote: boolean;
-  folderId: number | null;
+  folderId: number;
 };
 
 export type NewFolderState = {
   newFolder: boolean;
-  leadingFolderId: number | null;
+  leadingFolderId: number;
 };
 
 type SidebarProps = {
-  repository: {
-    folders: Folder[];
-    notes: Note[];
-  };
-  addFolder: (folderId: number | null, folderName: string) => void;
+  repository: Folder;
+  addFolder: (folderId: number, folderName: string) => void;
   removeFolder: (folderId: number) => void;
   renameFolder: (folderId: number, newName: string) => void;
-  addNote: (folderId: number | null, noteName: string) => void;
-  removeNote: (folderId: number | null, noteId: number) => void;
-  renameNote: (
-    folderId: number | null,
-    noteId: number,
-    newName: string
-  ) => void;
+  addNote: (folderId: number, noteName: string) => void;
+  removeNote: (folderId: number, noteId: number) => void;
+  renameNote: (folderId: number, noteId: number, newName: string) => void;
   setSelectedNote: (noteId: number | null) => void;
   selectedNote: number | null;
+  moveNote: (noteId: number, folderId: number | null) => void;
 };
 
 export default function Sidebar({
@@ -46,6 +40,7 @@ export default function Sidebar({
   renameFolder,
   setSelectedNote,
   selectedNote,
+  moveNote,
 }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<{
     [key: number]: boolean;
@@ -55,11 +50,11 @@ export default function Sidebar({
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [newNote, setNewNote] = useState<NewNoteState>({
     newNote: false,
-    folderId: null,
+    folderId: repository.id,
   });
   const [newFolder, setNewFolder] = useState<NewFolderState>({
     newFolder: false,
-    leadingFolderId: null,
+    leadingFolderId: repository.id,
   });
   const [renameNoteIdState, setRenameNoteIdState] = useState<number | null>(
     null
@@ -77,8 +72,8 @@ export default function Sidebar({
         inputRef.current &&
         !inputRef.current.contains(event.target as Node)
       ) {
-        setNewNote({ newNote: false, folderId: null });
-        setNewFolder({ newFolder: false, leadingFolderId: null });
+        setNewNote({ newNote: false, folderId: repository.id });
+        setNewFolder({ newFolder: false, leadingFolderId: repository.id });
         setRenameFolderIdState(null);
         setRenameNoteIdState(null);
       }
@@ -88,7 +83,13 @@ export default function Sidebar({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [setNewNote, setNewFolder, setRenameFolderIdState, setRenameNoteIdState]);
+  }, [
+    setNewNote,
+    setNewFolder,
+    setRenameFolderIdState,
+    setRenameNoteIdState,
+    repository.id,
+  ]);
 
   // Handle sidebar resize
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
@@ -110,7 +111,6 @@ export default function Sidebar({
   }
 
   const toggleFolder = (folderId: number) => {
-    console.log("toggleFolder", folderId);
     setExpandedFolders((prev) => ({
       ...prev,
       [folderId]: !prev[folderId],
@@ -126,38 +126,27 @@ export default function Sidebar({
 
   function handleKeyDown(
     e: React.KeyboardEvent<HTMLInputElement>,
-    notesFolderId?: number
+    notesFolderId: number
   ) {
     if (e.key === "Enter") {
       // Create New Note
       if (newNote.newNote) {
         addNewNote();
-        handleNewNoteState(null);
-        if (newNote.folderId !== null) {
-          return openFolder(newNote.folderId);
-        }
-        return;
+        handleNewNoteState(newNote.folderId);
+        return openFolder(newNote.folderId);
       }
 
       // Create New Folder
       if (newFolder.newFolder) {
         addNewFolder();
-        handleNewFolderState(null);
-        if (newFolder.leadingFolderId !== null) {
-          return openFolder(newFolder.leadingFolderId);
-        }
-        return;
+        handleNewFolderState(newFolder.leadingFolderId);
+        return openFolder(newFolder.leadingFolderId);
       }
 
       // Rename Note
       if (renameNoteIdState !== null) {
-        if (notesFolderId) {
-          handleRenameNote(notesFolderId);
-        } else {
-          handleRenameNote(null);
-        }
+        handleRenameNote(notesFolderId);
         setRenameNoteIdState(null);
-        return;
       }
 
       // Rename Folder
@@ -169,11 +158,11 @@ export default function Sidebar({
     }
   }
 
-  function handleNewNoteState(folderId: number | null) {
+  function handleNewNoteState(folderId: number) {
     setNewNote({ newNote: !newNote.newNote, folderId });
   }
 
-  function handleNewFolderState(leadingFolderId: number | null) {
+  function handleNewFolderState(leadingFolderId: number) {
     setNewFolder({ newFolder: !newFolder.newFolder, leadingFolderId });
   }
 
@@ -185,13 +174,13 @@ export default function Sidebar({
     folderId,
     noteId,
   }: {
-    folderId: number | null;
+    folderId: number;
     noteId: number;
   }) {
     removeNote(folderId, noteId);
   }
 
-  function handleRenameNote(folderId: number | null) {
+  function handleRenameNote(folderId: number) {
     if (renameNoteIdState === null) return;
     renameNote(folderId, renameNoteIdState, newNoteName);
   }
@@ -225,43 +214,15 @@ export default function Sidebar({
   };
 
   // Called when the dragged element is dropped onto a target
-  const handleDrop = (e: React.DragEvent, targetNoteId: number) => {
+  const handleDrop = (e: React.DragEvent, targetFolderId: number) => {
     const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
 
-    // Handle the logic to move or reorder the notes
-    if (draggedNoteId !== targetNoteId) {
-      // For example, you could update the state to reorder the notes
-      console.log(`Dropped note ${draggedNoteId} onto note ${targetNoteId}`);
-      // Add your custom logic here to rearrange or move notes
-    }
+    // For example, you could update the state to reorder the notes
+    console.log(`Dropped note ${draggedNoteId} onto folder ${targetFolderId}`);
+    // Add your custom logic here to rearrange or move notes
+    moveNote(draggedNoteId, targetFolderId);
   };
 
-  // Called when the drag operation starts
-  const handleFolderDragStart = (
-    e: React.DragEvent<HTMLButtonElement>,
-    folderId: number
-  ) => {
-    e.dataTransfer.setData("text/plain", folderId.toString()); // Set the dragged note's ID
-    e.dataTransfer.effectAllowed = "move";
-  };
-
-  // Called when the dragged element is over a valid drop target
-  const handleFolderDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Required to allow drop
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  // Called when the dragged element is dropped onto a target
-  const handleFolderDrop = (e: React.DragEvent, targetId: number) => {
-    const draggedFolderId = parseInt(e.dataTransfer.getData("text/plain"), 10);
-
-    // Handle the logic to move or reorder the notes
-    if (draggedFolderId !== targetId) {
-      // For example, you could update the state to reorder the notes
-      console.log(`Dropped folder ${draggedFolderId} onto note ${targetId}`);
-      // Add your custom logic here to rearrange or move notes
-    }
-  };
   return (
     <div className="flex h-[calc(100vh-65px)]">
       {/* Sidebar */}
@@ -274,7 +235,7 @@ export default function Sidebar({
             <p>Your Notes</p>
             <Dropdown
               handleNewNoteState={handleNewNoteState}
-              folderId={null}
+              folderId={repository.id}
               handleRemoveNote={handleRemoveNote}
               noteId={-1}
               variant="new"
@@ -290,7 +251,7 @@ export default function Sidebar({
             onMouseDown={handleMouseDown}
           />
 
-          {repository.folders.length === 0 &&
+          {repository.subfolders.length === 0 &&
             repository.notes.length === 0 &&
             !newNote.newNote &&
             !newFolder.newFolder && (
@@ -301,31 +262,32 @@ export default function Sidebar({
               </div>
             )}
           {/* New Note at top level (Not in folder) */}
-          {newNote.newNote && newNote.folderId === null && (
+          {newNote.newNote && newNote.folderId === repository.id && (
             <div ref={inputRef}>
               <div className="bg-black w-full px-2">
                 <Input
                   placeholder="Note Title"
                   onChange={(e) => setNewNoteName(e.target.value)}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => handleKeyDown(e, repository.id)}
                 />
               </div>
             </div>
           )}
-          {newFolder.newFolder && newFolder.leadingFolderId === null && (
-            <div ref={inputRef}>
-              <div className="bg-black w-full px-2">
-                <Input
-                  placeholder="Folder Title"
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                />
+          {newFolder.newFolder &&
+            newFolder.leadingFolderId === repository.id && (
+              <div ref={inputRef}>
+                <div className="bg-black w-full px-2">
+                  <Input
+                    placeholder="Folder Title"
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, repository.id)}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           <UserFolders
-            folders={repository.folders}
+            folders={repository.subfolders}
             handleNewNoteState={handleNewNoteState}
             handleNewFolderState={handleNewFolderState}
             newNote={newNote}
@@ -350,9 +312,9 @@ export default function Sidebar({
             inputRef={inputRef}
             setSelectedNote={setSelectedNote}
             selectedNote={selectedNote}
-            handleFolderDragStart={handleFolderDragStart}
-            handleFolderDragOver={handleFolderDragOver}
-            handleFolderDrop={handleFolderDrop}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDrop={handleDrop}
           />
           {repository.notes.length > 0 &&
             repository.notes.map((note) => (
@@ -373,7 +335,7 @@ export default function Sidebar({
                       <Input
                         placeholder="New Title"
                         onChange={(e) => setNewNoteName(e.target.value)}
-                        onKeyDown={handleKeyDown}
+                        onKeyDown={(e) => handleKeyDown(e, repository.id)}
                       />
                     </div>
                   ) : (
@@ -382,7 +344,7 @@ export default function Sidebar({
                 </Button>
                 {renameNoteIdState !== note.id && (
                   <Dropdown
-                    folderId={null}
+                    folderId={repository.id}
                     noteId={note.id}
                     handleRemoveNote={handleRemoveNote}
                     handleNewNoteState={handleNewNoteState}

@@ -1,3 +1,4 @@
+import { Folder } from "lucide-react";
 import { create } from "zustand";
 
 export type Note = {
@@ -16,37 +17,49 @@ export type Folder = {
 };
 
 export interface RepoState {
-  repository: {
-    folders: Folder[];
-    notes: Note[];
-  };
+  repository: Folder;
   folderId: number;
   noteId: number;
   clearRepo: () => void;
-  importRepo: (repo: { folders: Folder[]; notes: Note[] }) => void;
+  importRepo: (repo: Folder) => void;
   incrementFolderId: () => number;
   incrementNoteId: () => number;
-  addFolder: (folderId: number | null, folderName: string) => void;
+  addFolder: (folderId: number, folderName: string) => void;
   removeFolder: (folderId: number) => void;
   renameFolder: (folderId: number, newName: string) => void;
-  addNote: (folderId: number | null, noteName: string) => void;
-  removeNote: (folderId: number | null, noteId: number) => void;
-  renameNote: (
-    folderId: number | null,
-    noteId: number,
-    newName: string
-  ) => void;
+  addNote: (folderId: number, noteName: string) => void;
+  removeNote: (folderId: number, noteId: number) => void;
+  renameNote: (folderId: number, noteId: number, newName: string) => void;
   writeNote: (noteId: number, content: string) => void;
+  moveNote: (noteId: number, folderId: number | null) => void;
 }
 
+const rootFolder: Folder = {
+  id: 0,
+  name: "Root",
+  notes: [],
+  subfolders: [],
+  parentFolderId: null,
+};
+
 const useRepoStore = create<RepoState>((set) => ({
-  repository: {
-    folders: [],
-    notes: [],
+  repository: rootFolder,
+
+  // Root folder has id 0
+  folderId: 1,
+  noteId: 0,
+
+  clearRepo: () => {
+    set({
+      repository: rootFolder,
+    });
   },
 
-  folderId: 0,
-  noteId: 0,
+  importRepo: (repo) => {
+    set({
+      repository: repo,
+    });
+  },
 
   incrementFolderId: () => {
     let updatedFolderId = 0;
@@ -57,21 +70,6 @@ const useRepoStore = create<RepoState>((set) => ({
       };
     });
     return updatedFolderId;
-  },
-
-  clearRepo: () => {
-    set({
-      repository: {
-        folders: [],
-        notes: [],
-      },
-    });
-  },
-
-  importRepo: (repo) => {
-    set({
-      repository: repo,
-    });
   },
 
   incrementNoteId: () => {
@@ -98,7 +96,7 @@ const useRepoStore = create<RepoState>((set) => ({
       // Recursive function to add the new folder to the correct parent folder
       const addFolderRecursively = (
         folders: Folder[],
-        parentFolderId: number | null
+        parentFolderId: number
       ): Folder[] => {
         return folders.map((folder) => {
           if (folder.id === parentFolderId) {
@@ -114,26 +112,22 @@ const useRepoStore = create<RepoState>((set) => ({
         });
       };
 
-      // If there is a parentFolderId, add the new folder as a subfolder
-      if (parentFolderId !== null) {
-        return {
-          repository: {
-            ...state.repository,
-            folders: addFolderRecursively(
-              state.repository.folders,
-              parentFolderId
-            ),
-          },
-        };
-      }
-
-      // If there is no parentFolderId, add the new folder as a root folder
-      return {
-        repository: {
-          ...state.repository,
-          folders: [...state.repository.folders, newFolder],
-        },
-      };
+      return parentFolderId === state.repository.id
+        ? {
+            repository: {
+              ...state.repository,
+              subfolders: [...state.repository.subfolders, newFolder],
+            },
+          }
+        : {
+            repository: {
+              ...state.repository,
+              subfolders: addFolderRecursively(
+                state.repository.subfolders,
+                parentFolderId
+              ),
+            },
+          };
     }),
 
   removeFolder: (folderId) =>
@@ -156,7 +150,10 @@ const useRepoStore = create<RepoState>((set) => ({
       return {
         repository: {
           ...state.repository,
-          folders: removeFolderRecursively(state.repository.folders, folderId),
+          subfolders: removeFolderRecursively(
+            state.repository.subfolders,
+            folderId
+          ),
         },
       };
     }),
@@ -189,8 +186,8 @@ const useRepoStore = create<RepoState>((set) => ({
       return {
         repository: {
           ...state.repository,
-          folders: renameFolderRecursively(
-            state.repository.folders,
+          subfolders: renameFolderRecursively(
+            state.repository.subfolders,
             folderId,
             newName
           ),
@@ -207,52 +204,39 @@ const useRepoStore = create<RepoState>((set) => ({
         folderId: folderId,
       };
 
-      if (folderId === null) {
-        return {
-          repository: {
-            ...state.repository,
-            notes: [...state.repository.notes, newNote],
-          },
-        };
-      }
-
       const addNoteRecursively = (
         folders: Folder[],
         folderId: number
-      ): Folder[] => {
-        return folders.map((folder) => {
-          if (folder.id === folderId) {
-            return {
-              ...folder,
-              notes: [...folder.notes, newNote],
-            };
-          }
-          return {
-            ...folder,
-            subfolders: addNoteRecursively(folder.subfolders, folderId),
-          };
-        });
-      };
+      ): Folder[] =>
+        folders.map((folder) =>
+          folder.id === folderId
+            ? { ...folder, notes: [...folder.notes, newNote] }
+            : {
+                ...folder,
+                subfolders: addNoteRecursively(folder.subfolders, folderId),
+              }
+        );
 
-      return {
-        repository: {
-          ...state.repository,
-          folders: addNoteRecursively(state.repository.folders, folderId),
-        },
-      };
+      return folderId === state.repository.id
+        ? {
+            repository: {
+              ...state.repository,
+              notes: [...state.repository.notes, newNote],
+            },
+          }
+        : {
+            repository: {
+              ...state.repository,
+              subfolders: addNoteRecursively(
+                state.repository.subfolders,
+                folderId
+              ),
+            },
+          };
     }),
 
   removeNote: (folderId, noteId) =>
     set((state) => {
-      if (folderId === null) {
-        return {
-          repository: {
-            ...state.repository,
-            notes: state.repository.notes.filter((note) => note.id !== noteId),
-          },
-        };
-      }
-
       const removeNoteRecursively = (
         folders: Folder[],
         folderId: number,
@@ -276,37 +260,29 @@ const useRepoStore = create<RepoState>((set) => ({
         });
       };
 
-      return {
-        repository: {
-          ...state.repository,
-          folders: removeNoteRecursively(
-            state.repository.folders,
-            folderId,
-            noteId
-          ),
-        },
-      };
+      return folderId === state.repository.id
+        ? {
+            repository: {
+              ...state.repository,
+              notes: state.repository.notes.filter(
+                (note) => note.id !== noteId
+              ),
+            },
+          }
+        : {
+            repository: {
+              ...state.repository,
+              subfolders: removeNoteRecursively(
+                state.repository.subfolders,
+                folderId,
+                noteId
+              ),
+            },
+          };
     }),
 
   renameNote: (folderId, noteId, newName) =>
     set((state) => {
-      if (folderId === null) {
-        return {
-          repository: {
-            ...state.repository,
-            notes: state.repository.notes.map((note) => {
-              if (note.id === noteId) {
-                return {
-                  ...note,
-                  name: newName,
-                };
-              }
-              return note;
-            }),
-          },
-        };
-      }
-
       const renameNoteRecursively = (
         folders: Folder[],
         folderId: number,
@@ -340,17 +316,26 @@ const useRepoStore = create<RepoState>((set) => ({
         });
       };
 
-      return {
-        repository: {
-          ...state.repository,
-          folders: renameNoteRecursively(
-            state.repository.folders,
-            folderId,
-            noteId,
-            newName
-          ),
-        },
-      };
+      return folderId === state.repository.id
+        ? {
+            repository: {
+              ...state.repository,
+              notes: state.repository.notes.map((note) =>
+                note.id === noteId ? { ...note, name: newName } : note
+              ),
+            },
+          }
+        : {
+            repository: {
+              ...state.repository,
+              subfolders: renameNoteRecursively(
+                state.repository.subfolders,
+                folderId,
+                noteId,
+                newName
+              ),
+            },
+          };
     }),
 
   writeNote: (noteId, content) =>
@@ -381,38 +366,27 @@ const useRepoStore = create<RepoState>((set) => ({
         });
       };
 
-      // If the note was found and updated at the top level, return the updated folder
-      const noteFound = state.repository.notes.find(
-        (note) => note.id === noteId
-      );
-      if (noteFound) {
-        return {
-          repository: {
-            ...state.repository,
-            notes: state.repository.notes.map((note) => {
-              if (note.id === noteId) {
-                return {
-                  ...note,
-                  content: content,
-                };
-              }
-              return note;
-            }),
-          },
-        };
-      }
-
       return {
         repository: {
           ...state.repository,
-          folders: writeNoteRecursively(
-            state.repository.folders,
+          notes: state.repository.notes.map((note) =>
+            note.id === noteId ? { ...note, content: content } : note
+          ),
+          subfolders: writeNoteRecursively(
+            state.repository.subfolders,
             noteId,
             content
           ),
         },
       };
     }),
+
+  moveNote: (noteId, folderId) => {
+    set((state) => {
+      console.log("Moving note", noteId, "to folder", folderId);
+      return state;
+    });
+  },
 }));
 
 export default useRepoStore;

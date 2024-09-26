@@ -15,6 +15,7 @@ export default function App() {
     removeNote,
     renameNote,
     writeNote,
+    moveNote,
   } = useRepoStore();
 
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
@@ -35,37 +36,29 @@ export default function App() {
   useEffect(() => {
     const isFirstLoad = sessionStorage.getItem("isFirstLoad");
     if (!isFirstLoad) {
-      if (repository.folders.length === 0) {
-        addStartingNotes({ addNote, writeNote });
-        setSelectedNote(1);
-      }
+      addStartingNotes({ addNote, writeNote });
+      setSelectedNote(1);
+
       sessionStorage.setItem("isFirstLoad", "true");
     }
-  }, [repository.folders, addNote, writeNote]);
+  }, [repository, addNote, writeNote]);
 
   function findNote() {
     if (!selectedNote) return null;
-    let note = repository.notes.find((note) => note.id === selectedNote);
 
     const findNoteRecursively = (
-      folders: Folder[],
+      folder: Folder,
       noteId: number
-    ): Note | undefined => {
-      return folders.reduce<Note | undefined>((foundNote, folder) => {
-        if (foundNote) return foundNote;
+    ): Note | null => {
+      const note = folder.notes.find((n) => n.id === noteId);
+      if (note) return note;
 
-        const note = folder.notes.find((note) => note.id === noteId);
-        if (note) return note;
-
-        return findNoteRecursively(folder.subfolders ?? [], noteId);
-      }, undefined);
+      return folder.subfolders.reduce<Note | null>((found, subfolder) => {
+        return found || findNoteRecursively(subfolder, noteId);
+      }, null);
     };
 
-    if (!note) {
-      note = findNoteRecursively(repository.folders, selectedNote);
-    }
-
-    return note || null;
+    return findNoteRecursively(repository, selectedNote);
   }
 
   const note = findNote();
@@ -84,6 +77,7 @@ export default function App() {
           repository={repository}
           setSelectedNote={setSelectedNote}
           selectedNote={selectedNote}
+          moveNote={moveNote}
         />
         <Input note={note} writeNote={writeNote} />
       </div>

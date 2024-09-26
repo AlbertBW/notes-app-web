@@ -13,7 +13,7 @@ export default function Header() {
   const [fileName, setFileName] = useState("");
 
   const emptyRepo =
-    repository.folders.length === 0 && repository.notes.length === 0;
+    repository.subfolders.length === 0 && repository.notes.length === 0;
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -23,9 +23,10 @@ export default function Header() {
         try {
           const json = JSON.parse(e.target?.result as string);
           importRepo(json);
+          setError(null);
         } catch (error) {
           console.error("Error parsing JSON:", error);
-          setError(`Error importing file: ${error}`);
+          setError(`Error: Could not open file.`);
         }
       };
       reader.readAsText(file);
@@ -61,17 +62,15 @@ export default function Header() {
   return (
     <>
       <div className="border-b border-zinc-600 h-16 flex items-center justify-between px-8">
-        <div className="flex items-center space-x-1">
-          <h1 className="font-semibold text-xl">
-            Free Markdown Note Taking App{" "}
+        <div className="flex items-center space-x-8">
+          <h1 className="font-semibold text-xl p-2">
+            Free Markdown Note Taking
           </h1>
-          <p className="text-zinc-300">
-            {" "}
-            - Download your notes to your computer
-          </p>
+          <p className="text-zinc-400"> Download your notes to your computer</p>
         </div>
 
         <div className="space-x-4 flex">
+          {error && <p className="text-red-500 flex items-center">{error}</p>}
           <Button
             onClick={() => setNewModal(true)}
             variant={"secondary"}
@@ -80,13 +79,12 @@ export default function Header() {
             New
           </Button>
           <div className="border-r " />
-          {error && <p className="text-red-500">{error}</p>}
           <Button
             onClick={() => setExportModal(true)}
             variant={"secondary"}
             disabled={emptyRepo}
           >
-            Export
+            Save as (.notes file)
           </Button>
 
           <input
@@ -100,7 +98,7 @@ export default function Header() {
             }}
           />
           <Button variant="secondary" onClick={() => setImportModal(true)}>
-            Import
+            Open (.notes file)
           </Button>
         </div>
       </div>
@@ -117,10 +115,10 @@ export default function Header() {
       )}
       {exportModal && (
         <Modal
-          heading="Export your notes"
+          heading="Save your notes to your computer"
           subheading="Name your file and download it"
           destructionButtonText="Cancel"
-          standardButtonText="Export"
+          standardButtonText="Save File"
           onDestruction={closeExportModal}
           onConfirmation={handleExport}
           disabled={fileName === ""}
@@ -131,7 +129,7 @@ export default function Header() {
       {importModal && (
         <Modal
           heading="Import your notes"
-          subheading="Select a .notes file to import"
+          subheading="Select a .notes file to open"
           warning="This will overwrite your current notes"
           destructionButtonText="Cancel"
           standardButtonText="Select a file"

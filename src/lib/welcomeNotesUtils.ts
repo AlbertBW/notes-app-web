@@ -15,11 +15,11 @@ export const addStartingNotes = ({
   addNote,
   writeNote,
 }: {
-  addNote: (folderId: number | null, noteName: string) => void;
+  addNote: (folderId: number, noteName: string) => void;
   writeNote: (noteId: number, content: string) => void;
 }) => {
   notes.forEach((note) => {
-    addNote(null, note.name);
+    addNote(0, note.name);
     writeNote(note.id, note.content);
   });
 };

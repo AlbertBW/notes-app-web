@@ -12,12 +12,9 @@ type UserFoldersProps = {
   newNote: NewNoteState;
   setNewNoteName: (name: string) => void;
   setNewFolderName: (name: string) => void;
-  handleNewNoteState: (folderId: number | null) => void;
-  handleNewFolderState: (folderId: number | null) => void;
-  handleRemoveNote: (params: {
-    folderId: number | null;
-    noteId: number;
-  }) => void;
+  handleNewNoteState: (folderId: number) => void;
+  handleNewFolderState: (folderId: number) => void;
+  handleRemoveNote: (params: { folderId: number; noteId: number }) => void;
   setNewNote: (newNote: NewNoteState) => void;
   newFolder: NewFolderState;
   setNewFolder: (newFolder: NewFolderState) => void;
@@ -25,13 +22,13 @@ type UserFoldersProps = {
   handleRemoveFolder: (folderId: number) => void;
   renameNoteIdState: number | null;
   setRenameNoteIdState: (noteId: number | null) => void;
-  handleRenameNote: (folderId: number | null) => void;
+  handleRenameNote: (folderId: number) => void;
   setRenameFolderIdState: (folderId: number | null) => void;
   renameFolderIdState: number | null;
   handleRenameFolder: () => void;
   handleKeyDown: (
     e: React.KeyboardEvent<HTMLInputElement>,
-    notesFolderId?: number
+    notesFolderId: number
   ) => void;
   expandedFolders: { [key: number]: boolean };
   toggleFolder: (folderId: number) => void;
@@ -39,15 +36,12 @@ type UserFoldersProps = {
   inputRef: React.RefObject<HTMLDivElement>;
   setSelectedNote: (noteId: number) => void;
   selectedNote: number | null;
-  handleFolderDragStart: (
+  handleDragStart: (
     e: React.DragEvent<HTMLButtonElement>,
-    folderId: number
+    noteId: number
   ) => void;
-  handleFolderDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
-  handleFolderDrop: (
-    e: React.DragEvent<HTMLButtonElement>,
-    folderId: number
-  ) => void;
+  handleDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
+  handleDrop: (e: React.DragEvent<HTMLButtonElement>, noteId: number) => void;
 };
 
 export default function UserFolders({
@@ -77,9 +71,9 @@ export default function UserFolders({
   openFolder,
   setSelectedNote,
   selectedNote,
-  handleFolderDragStart,
-  handleFolderDragOver,
-  handleFolderDrop,
+  handleDragStart,
+  handleDragOver,
+  handleDrop,
 }: UserFoldersProps) {
   return (
     <div className="flex flex-col">
@@ -91,10 +85,10 @@ export default function UserFolders({
               {subfolder && <div className={``} />}
               <Button
                 draggable
-                onDragStart={(e) => handleFolderDragStart(e, folder.id)} // Start dragging a folder
-                onDragOver={handleFolderDragOver} // Required to allow a drop
-                onDrop={(e) => handleFolderDrop(e, folder.id)} // Drop a note into a new folder or position
                 onClick={() => toggleFolder(folder.id)}
+                // onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
+                onDragOver={handleDragOver} // Required to allow a drop
+                // onDrop={(e) => handleDrop(e, note.id)} // Drop a note into a new folder or position
                 className="bg-black gap-2 w-full"
               >
                 <FolderIcon />{" "}
@@ -105,7 +99,7 @@ export default function UserFolders({
                       onChange={(e) => {
                         setNewFolderName(e.target.value);
                       }}
-                      onKeyDown={handleKeyDown}
+                      onKeyDown={(e) => handleKeyDown(e, folder.id)}
                     />
                   </div>
                 ) : (
@@ -159,9 +153,9 @@ export default function UserFolders({
                     openFolder={openFolder}
                     setSelectedNote={setSelectedNote}
                     selectedNote={selectedNote}
-                    handleFolderDragStart={handleFolderDragStart}
-                    handleFolderDragOver={handleFolderDragOver}
-                    handleFolderDrop={handleFolderDrop}
+                    handleDragStart={handleDragStart}
+                    handleDragOver={handleDragOver}
+                    handleDrop={handleDrop}
                   />
                 </div>
               )}
@@ -175,7 +169,7 @@ export default function UserFolders({
                     onChange={(e) => {
                       setNewNoteName(e.target.value);
                     }}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={(e) => handleKeyDown(e, folder.id)}
                   />
                 </Button>
               </div>
@@ -191,7 +185,7 @@ export default function UserFolders({
                       onChange={(e) => {
                         setNewFolderName(e.target.value);
                       }}
-                      onKeyDown={handleKeyDown}
+                      onKeyDown={(e) => handleKeyDown(e, folder.id)}
                     />
                   </div>
                 </Button>

@@ -16,15 +16,12 @@ export default function Dropdown({
   setRenameNoteIdState,
   setRenameFolderIdState,
 }: {
-  handleNewNoteState: (folderId: number | null) => void;
-  handleNewFolderState: (folderId: number | null) => void;
+  handleNewNoteState: (folderId: number) => void;
+  handleNewFolderState: (folderId: number) => void;
   variant: DropdownVariant;
-  handleRemoveNote: (params: {
-    folderId: number | null;
-    noteId: number;
-  }) => void;
+  handleRemoveNote: (params: { folderId: number; noteId: number }) => void;
   handleRemoveFolder: (folderId: number) => void;
-  folderId: number | null;
+  folderId: number;
   noteId: number;
   setRenameNoteIdState: (noteId: number | null) => void;
   setRenameFolderIdState: (folderId: number) => void;
@@ -84,7 +81,7 @@ export default function Dropdown({
               <li>
                 <button
                   onClick={() => {
-                    handleNewNoteState(null);
+                    handleNewNoteState(folderId);
                     toggleDropdown();
                   }}
                   className="block px-4 py-2 hover:bg-zinc-800 w-full"
@@ -95,7 +92,7 @@ export default function Dropdown({
               <li>
                 <button
                   onClick={() => {
-                    handleNewFolderState(null);
+                    handleNewFolderState(folderId);
                     toggleDropdown();
                   }}
                   className="block px-4 py-2 hover:bg-zinc-800 w-full"
