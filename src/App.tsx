@@ -16,6 +16,7 @@ export default function App() {
     renameNote,
     writeNote,
     moveNote,
+    moveFolder,
   } = useRepoStore();
 
   const [selectedNote, setSelectedNote] = useState<number | null>(null);
@@ -78,6 +79,7 @@ export default function App() {
           setSelectedNote={setSelectedNote}
           selectedNote={selectedNote}
           moveNote={moveNote}
+          moveFolder={moveFolder}
         />
         <Input note={note} writeNote={writeNote} />
       </div>

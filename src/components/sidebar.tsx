@@ -28,6 +28,7 @@ type SidebarProps = {
   setSelectedNote: (noteId: number | null) => void;
   selectedNote: number | null;
   moveNote: (noteId: number, folderId: number) => void;
+  moveFolder: (folderId: number, parentId: number) => void;
 };
 
 export default function Sidebar({
@@ -41,6 +42,7 @@ export default function Sidebar({
   setSelectedNote,
   selectedNote,
   moveNote,
+  moveFolder,
 }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<{
     [key: number]: boolean;
@@ -202,20 +204,18 @@ export default function Sidebar({
   // Called when the drag operation starts
   const handleDragStart = (
     e: React.DragEvent<HTMLButtonElement>,
-    noteId: number
+    noteId: number,
+    type: "note" | "folder"
   ) => {
     e.dataTransfer.setData("text/plain", noteId.toString()); // Set the dragged note's ID
+    e.dataTransfer.setData("type", type); // Set the dragged element's type
     e.dataTransfer.effectAllowed = "move";
-    const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    console.log(`Started dragging note ${draggedNoteId}`);
   };
 
   // Called when the dragged element is over a valid drop target
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault(); // Required to allow drop
     e.dataTransfer.dropEffect = "move";
-    const draggedNoteId = parseInt(e.dataTransfer.getData("text/plain"), 10);
-    console.log(`Dragging note ${draggedNoteId} over folder`);
   };
 
   // Called when the dragged element is dropped onto a target
@@ -225,15 +225,18 @@ export default function Sidebar({
     isFolder: boolean
   ) => {
     e.preventDefault();
-    const draggedNoteId = e.dataTransfer.getData("text/plain");
+    const draggedId = e.dataTransfer.getData("text/plain");
+    const draggedType = e.dataTransfer.getData("type");
 
-    console.log("Dropped");
-
-    console.log(`Dropped note ${draggedNoteId} into folder ${targetId}`);
     if (isFolder) {
-      // Add logic to move the note into the folder\
-      openFolder(targetId);
-      moveNote(parseInt(draggedNoteId, 10), targetId);
+      if (draggedType === "note") {
+        // Add logic to move the note into the folder
+        openFolder(targetId);
+        moveNote(parseInt(draggedId, 10), targetId);
+      } else if (draggedType === "folder") {
+        // Add logic to move the folder into the folder
+        moveFolder(parseInt(draggedId, 10), targetId);
+      }
     } else {
       // Add logic to reorder notes or handle note-to-note drop
       // DO NOTHING FOR NOW - MAYBE ADD LATER
@@ -246,7 +249,6 @@ export default function Sidebar({
 
   // Called when a folder is hovered over
   const handleDragEnter = (folderId: number) => {
-    console.log("Hovered over folder");
     setTimeout(() => {
       if (timeoutIdRef.current) {
         clearTimeout(timeoutIdRef.current);
@@ -262,7 +264,6 @@ export default function Sidebar({
 
   // Called when a folder is no longer hovered over
   const handleDragLeave = () => {
-    console.log("Left folder");
     setHoveredFolderId(null);
     if (timeoutIdRef.current) {
       clearTimeout(timeoutIdRef.current);
@@ -368,52 +369,54 @@ export default function Sidebar({
             handleDragLeave={handleDragLeave}
           />
           {repository.notes.length > 0 &&
-            repository.notes.map((note) => (
-              <div key={note.id} className="w-full flex flex-row group px-2">
-                <Button
-                  onClick={() => setSelectedNote(note.id)}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
-                  onDragOver={handleDragOver} // Required to allow a drop
-                  onDrop={(e) => handleDrop(e, note.id, false)} // Drop a note into a new folder or position
-                  className={`bg-black gap-2 w-full ${
-                    selectedNote === note.id && "bg-primary"
-                  }`}
-                >
-                  <NoteIcon />{" "}
-                  {renameNoteIdState === note.id ? (
-                    <div ref={inputRef}>
-                      <Input
-                        placeholder="New Title"
-                        onChange={(e) => setNewNoteName(e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(e, repository.id)}
-                      />
-                    </div>
-                  ) : (
-                    <p>{note.name}</p>
+            repository.notes
+              .slice()
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map((note) => (
+                <div key={note.id} className="w-full flex flex-row group px-2">
+                  <Button
+                    onClick={() => setSelectedNote(note.id)}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, note.id, "note")} // Start dragging a note
+                    onDragOver={handleDragOver} // Required to allow a drop
+                    onDrop={(e) => handleDrop(e, note.id, false)} // Drop a note into a new folder or position
+                    className={`bg-black gap-2 w-full ${
+                      selectedNote === note.id && "bg-primary"
+                    }`}
+                  >
+                    <NoteIcon />{" "}
+                    {renameNoteIdState === note.id ? (
+                      <div ref={inputRef}>
+                        <Input
+                          placeholder="New Title"
+                          onChange={(e) => setNewNoteName(e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, repository.id)}
+                        />
+                      </div>
+                    ) : (
+                      <p>{note.name}</p>
+                    )}
+                  </Button>
+                  {renameNoteIdState !== note.id && (
+                    <Dropdown
+                      folderId={repository.id}
+                      noteId={note.id}
+                      handleRemoveNote={handleRemoveNote}
+                      handleNewNoteState={handleNewNoteState}
+                      variant="note"
+                      handleNewFolderState={handleNewFolderState}
+                      handleRemoveFolder={() => {}}
+                      setRenameNoteIdState={setRenameNoteIdState}
+                      setRenameFolderIdState={setRenameFolderIdState}
+                    />
                   )}
-                </Button>
-                {renameNoteIdState !== note.id && (
-                  <Dropdown
-                    folderId={repository.id}
-                    noteId={note.id}
-                    handleRemoveNote={handleRemoveNote}
-                    handleNewNoteState={handleNewNoteState}
-                    variant="note"
-                    handleNewFolderState={handleNewFolderState}
-                    handleRemoveFolder={() => {}}
-                    setRenameNoteIdState={setRenameNoteIdState}
-                    setRenameFolderIdState={setRenameFolderIdState}
-                  />
-                )}
-              </div>
-            ))}
+                </div>
+              ))}
 
-          {/* For dragging to root */}
+          {/* For dragging notes or folders to root */}
           <button
             className="absolute min-h-12 h-full max-h-[200px] w-full"
             draggable
-            onDragStart={(e) => handleDragStart(e, repository.id)} // Start dragging a folder
             onDragOver={handleDragOver} // Required to allow a drop
             onDrop={(e) => handleDrop(e, repository.id, true)} // Drop a note or folder into this folder
             onDragEnter={() => handleDragEnter(repository.id)} // Highlight folder on drag enter

@@ -38,7 +38,8 @@ type UserFoldersProps = {
   selectedNote: number | null;
   handleDragStart: (
     e: React.DragEvent<HTMLButtonElement>,
-    noteId: number
+    noteId: number,
+    type: "note" | "folder"
   ) => void;
   handleDragOver: (e: React.DragEvent<HTMLButtonElement>) => void;
   handleDrop: (
@@ -96,7 +97,7 @@ export default function UserFolders({
               <Button
                 draggable
                 onClick={() => toggleFolder(folder.id)}
-                onDragStart={(e) => handleDragStart(e, folder.id)} // Start dragging a folder
+                onDragStart={(e) => handleDragStart(e, folder.id, "folder")} // Start dragging a folder
                 onDragOver={handleDragOver} // Required to allow a drop
                 onDrop={(e) => handleDrop(e, folder.id, true)} // Drop a note or folder into this folder
                 onDragEnter={() => handleDragEnter(folder.id)} // Highlight folder on drag enter
@@ -217,7 +218,7 @@ export default function UserFolders({
                     <Button
                       draggable
                       onClick={() => setSelectedNote(note.id)}
-                      onDragStart={(e) => handleDragStart(e, note.id)} // Start dragging a note
+                      onDragStart={(e) => handleDragStart(e, note.id, "note")} // Start dragging a note
                       onDragOver={handleDragOver} // Required to allow a drop
                       onDrop={(e) => handleDrop(e, note.id, false)} // Drop a note into a new folder or position
                       className={`bg-black gap-2 w-full ${
