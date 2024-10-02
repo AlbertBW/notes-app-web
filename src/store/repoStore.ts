@@ -1,3 +1,4 @@
+import JSZip from "jszip";
 import { Folder } from "lucide-react";
 import { create } from "zustand";
 
@@ -39,6 +40,33 @@ const rootFolder: Folder = {
   name: "Root",
   notes: [],
   subfolders: [],
+};
+
+const addFolderToZip = (zip: JSZip, folder: Folder) => {
+  folder.notes.forEach((note) => {
+    const filePath = `${folder.name}/${note.name}.md`;
+    zip.file(filePath, note.content);
+  });
+
+  folder.subfolders.forEach((subfolder) => {
+    const subZip = zip.folder(folder.name);
+    if (subZip) {
+      addFolderToZip(subZip, subfolder);
+    }
+  });
+};
+
+export const exportProject = () => {
+  const repo = useRepoStore.getState().repository;
+  const zip = new JSZip();
+  addFolderToZip(zip, repo);
+  zip.generateAsync({ type: "blob" }).then((content) => {
+    const url = window.URL.createObjectURL(content);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "notes.zip";
+    a.click();
+  });
 };
 
 const useRepoStore = create<RepoState>((set) => ({

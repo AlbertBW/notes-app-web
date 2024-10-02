@@ -66,7 +66,7 @@ export default function App() {
 
   return (
     <div>
-      <Header />
+      <Header note={note} />
       <div className="w-full h-[calc(100vh-65px)] flex">
         <Sidebar
           addFolder={addFolder}

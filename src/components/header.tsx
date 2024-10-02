@@ -1,9 +1,10 @@
-import useRepoStore from "@/store/repoStore";
+import useRepoStore, { Note } from "@/store/repoStore";
 import { Button } from "./ui/button";
 import { useRef, useState } from "react";
 import { Input } from "./ui/input";
+import ExportMenu from "./exportmenu";
 
-export default function Header() {
+export default function Header({ note }: { note: Note | null }) {
   const { repository, importRepo, clearRepo } = useRepoStore();
   const [exportModal, setExportModal] = useState(false);
   const [newModal, setNewModal] = useState(false);
@@ -79,6 +80,7 @@ export default function Header() {
             New
           </Button>
           <div className="border-r " />
+          <ExportMenu emptyRepo={emptyRepo} note={note} />
           <Button
             onClick={() => setExportModal(true)}
             variant={"secondary"}
